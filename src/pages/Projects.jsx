@@ -1,24 +1,34 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, createContext, useContext } from "react";
 import { useNavigate } from "react-router";
 import { Link } from "react-router";
 
+const FilterContext = createContext();
+
 function Projects() {
   const [projects, setProjects] = useState([]);
-  const [search, setSearch] = useState("");
-  const [filterType, setFilterType] = useState("");
+  const [filters, setFilters] = useState({
+    search: "",
+    type: "",
+  });
   const navigate = useNavigate();
 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters((prevFilters) => ({
+      ...prevFilters,
+      [name]: value,
+    }));
+  };
   function toAddProject() {
     navigate("/add_project");
   }
 
-  const handleSearchInputChange = ({ target }) => {
-    setSearch(target.value);
-  };
-
-  const handleFilterTypeInputChange = ({ target }) => {
-    setFilterType(target.value);
-  };
+  const filteredProjects = projects.filter((project) => {
+    return (
+      (filters.search === "" || project.title.includes(filters.search)) &&
+      (filters.type === "" || project.type.includes(filters.type))
+    );
+  });
 
   useEffect(() => {
     async function getProjects() {
@@ -48,65 +58,49 @@ function Projects() {
       >
         Voeg project toe.
       </button>
-      <input type="text" onChange={handleSearchInputChange} value={search} />
-      <input
-        type="text"
-        onChange={handleFilterTypeInputChange}
-        value={filterType}
-      />
+      <FilterContext.Provider
+        value={{
+          filters,
+          handleFilterChange,
+        }}
+      >
+        <FilterControls />
+        <article className="fm acm">
+          {filteredProjects.map((filteredProject) => (
+            <Link
+              className="akr bbl bjm la acd agd ati axp aze azr"
+              to={`/Projects/${filteredProject.id}`}
+              key={filteredProject.id}
+            >
+              <h1>{filteredProject.title}</h1>
+            </Link>
+          ))}
+        </article>
+      </FilterContext.Provider>
       <article className="fm acm">
-        {search === ""
-          ? filterType === ""
-            ? projects.map((project) => (
-                <Link
-                  className="akr bbl bjm la acd agd ati axp aze azr"
-                  to={`/Projects/${project.id}`}
-                  key={project.id}
-                >
-                  <h1>{project.title}</h1>
-                </Link>
-              ))
-            : projects
-                .filter((project) => project.type.includes(filterType))
-                .map((project) => (
-                  <Link
-                    className="akr bbl bjm la acd agd ati axp aze azr"
-                    to={`/Projects/${project.id}`}
-                    key={project.id}
-                  >
-                    <h1>{project.title}</h1>
-                  </Link>
-                ))
-          : filterType === ""
-          ? projects
-              .filter((project) => project.title.includes(search))
-              .map((project) => (
-                <Link
-                  className="akr bbl bjm la acd agd ati axp aze azr"
-                  to={`/Projects/${project.id}`}
-                  key={project.id}
-                >
-                  <h1>{project.title}</h1>
-                </Link>
-              ))
-          : projects
-              .filter(
-                (project) =>
-                  project.title.includes(search) &&
-                  project.type.includes(filterType)
-              )
-              .map((project) => (
-                <Link
-                  className="akr bbl bjm la acd agd ati axp aze azr"
-                  to={`/Projects/${project.id}`}
-                  key={project.id}
-                >
-                  <h1>{project.title}</h1>
-                </Link>
-              ))}
       </article>
     </>
   );
 }
+
+const FilterControls = () => {
+  const { filters, handleFilterChange } = useContext(FilterContext);
+  return (
+    <>
+      <input
+        type="text"
+        name="search"
+        onChange={handleFilterChange}
+        value={filters.search}
+      />
+      <input
+        type="text"
+        name="type"
+        onChange={handleFilterChange}
+        value={filters.type}
+      />
+    </>
+  );
+};
 
 export default Projects;
